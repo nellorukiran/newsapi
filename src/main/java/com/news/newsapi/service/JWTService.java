@@ -1,5 +1,6 @@
 package com.news.newsapi.service;
 
+import com.news.newsapi.logout.BlackList;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.SignatureAlgorithm;
 
@@ -11,6 +12,7 @@ import java.util.Date;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +21,9 @@ import java.util.function.Function;
 
 @Component
 public class JWTService {
+
+    @Autowired
+    BlackList blackList;
 
     private static final String SECERET = "!@#$FDGSDFGSGSGSGSHSHSHSSHGFFDSGSFGSSGHHHHHHHFDDFDFDFDFFHSDFSDFSFSHFFGHFDFDDFDFDFDFDFDFDFDFDFDFDFDFFSFSDFSFSFSFGEDDSDSDSDSDSDSDSDSD";
 
@@ -51,11 +56,11 @@ public class JWTService {
         final Claims claims = extractAllClaims(token);
         return claimResolver.apply(claims);
     }
-    private <T> T extractAllClaims(String token, Function<Claims, T> claimsResolver) {
+    public <T> T extractAllClaims(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
-    private Boolean isTokenExpired(String token){
+    public Boolean isTokenExpired(String token){
         return extractExpiration(token).before(new Date());
     }
 
@@ -64,7 +69,7 @@ public class JWTService {
     }
     public Boolean validateToken(String token, UserDetails userDetails){
         final String userName = extractUserName(token);
-        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token)  && !blackList.isBlackListed(token));
     }
 
 }
