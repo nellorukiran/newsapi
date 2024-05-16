@@ -1,9 +1,15 @@
 package com.news.newsapi.controller;
 
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.news.newsapi.entity.UserResponse;
 import com.news.newsapi.logout.BlackList;
 import com.news.newsapi.service.JWTService;
+import jakarta.persistence.Entity;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import com.news.newsapi.entity.AuthRequest;
@@ -15,10 +21,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/v2/auth")
+@CrossOrigin
 public class UserController {
     @Autowired
     UserInfoService userInfoService;
@@ -40,13 +48,22 @@ public class UserController {
     public String addUser(@RequestBody UserInfo userInfo){
         return userInfoService.addUser(userInfo);
     }
-    @PostMapping("/login")
-    public String login(@RequestBody AuthRequest authRequest){
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
-        if(authentication.isAuthenticated()){
-            return jwtService.generateToken(authRequest.getUsername());
+    @PostMapping(value = "/login", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserResponse> login(@RequestBody AuthRequest authRequest){
+
+       Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequest.getUsername(), authRequest.getPassword()));
+       UserResponse response = new UserResponse();
+
+       if(authentication.isAuthenticated()){
+           System.out.println("Login Successfully");
+            response.setMessage("Login Successfully");
+            response.setToken(jwtService.generateToken(authRequest.getUsername()));
+            return new ResponseEntity<>(response, HttpStatusCode.valueOf(200));
         }else{
-            throw new UsernameNotFoundException("Invalid User request");
+           System.out.println("Invalid User request");
+           response.setMessage("Invalid User request");
+           response.setToken(null);
+           return new ResponseEntity<>(response, HttpStatusCode.valueOf(403));
         }
     }
     @PostMapping("/logout")
